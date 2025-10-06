@@ -1,0 +1,675 @@
+-- Bandits9Script GUI — Полностью рабочий AimBot
+-- LocalScript для StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+player:WaitForChild("PlayerGui")
+
+-- Настройки
+local settings = {
+    Enabled = false,
+    FOV = 100,
+    VisibleCheck = false,
+    AutoShoot = true,
+    ShootDelay = 0.1,
+    AimAtHead = true,
+    KillAllEnabled = false
+}
+
+-- ========== GUI ==========
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BANDITS9SCRIPT_GUI"
+ScreenGui.Parent = player.PlayerGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 999
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 360, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+UIStroke.Thickness = 2
+UIStroke.Parent = MainFrame
+
+-- Header
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 28)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+Title.BackgroundTransparency = 0.2
+Title.Text = "BANDITS9SCRIPT™"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
+Title.BorderSizePixel = 0
+Title.Parent = MainFrame
+
+-- Обводка для текста заголовка
+local TitleTextStroke = Instance.new("UIStroke")
+TitleTextStroke.Color = Color3.fromRGB(0, 0, 0)
+TitleTextStroke.Thickness = 2
+TitleTextStroke.Parent = Title
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 8)
+TitleCorner.Parent = Title
+
+local TitleStroke = Instance.new("UIStroke")
+TitleStroke.Color = Color3.fromRGB(255, 255, 255)
+TitleStroke.Thickness = 1
+TitleStroke.Parent = Title
+
+-- Left tabs
+local TabsFrame = Instance.new("Frame")
+TabsFrame.Size = UDim2.new(0, 100, 1, -34)
+TabsFrame.Position = UDim2.new(0, 8, 0, 34)
+TabsFrame.BackgroundTransparency = 1
+TabsFrame.Parent = MainFrame
+
+local tabNames = {"Main", "Legit", "Teleports", "Credits"}
+local tabButtons = {}
+for i, name in ipairs(tabNames) do
+    local btn = Instance.new("TextButton")
+    btn.Name = name .. "Tab"
+    btn.Size = UDim2.new(1, 0, 0, 34)
+    btn.Position = UDim2.new(0, 0, 0, (i-1)*40)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 80)
+    btn.Text = name
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.BorderSizePixel = 0
+    btn.Parent = TabsFrame
+    
+    -- Обводка для текста кнопки
+    local btnTextStroke = Instance.new("UIStroke")
+    btnTextStroke.Color = Color3.fromRGB(0, 0, 0)
+    btnTextStroke.Thickness = 2
+    btnTextStroke.Parent = btn
+    
+    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0,6); c.Parent = btn
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Thickness = 1
+    stroke.Parent = btn
+    tabButtons[name] = btn
+end
+
+-- Right content area
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, -116, 1, -34)
+ContentFrame.Position = UDim2.new(0, 108, 0, 34)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.Parent = MainFrame
+
+-- Create pages
+local pages = {}
+for _, name in ipairs(tabNames) do
+    local page = Instance.new("Frame")
+    page.Name = name .. "Page"
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.Position = UDim2.new(0, 0, 0, 0)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    page.Parent = ContentFrame
+    pages[name] = page
+end
+pages["Main"].Visible = true
+
+-- Helper to create buttons
+local buttonInstances = {}
+
+local function addButtonToPage(page, name, x, y, w, h, textSize)
+    local btn = Instance.new("TextButton")
+    btn.Name = name:gsub(" ", "_")
+    btn.Size = UDim2.new(0, w or 140, 0, h or 30)
+    btn.Position = UDim2.new(0, x or 0, 0, y or 0)
+    btn.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = textSize or 14
+    btn.BorderSizePixel = 0
+    btn.Parent = page
+    
+    -- Обводка для текста кнопки
+    local btnTextStroke = Instance.new("UIStroke")
+    btnTextStroke.Color = Color3.fromRGB(0, 0, 0)
+    btnTextStroke.Thickness = 2
+    btnTextStroke.Parent = btn
+    
+    local uc = Instance.new("UICorner"); uc.CornerRadius = UDim.new(0,8); uc.Parent = btn
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Thickness = 2
+    stroke.Parent = btn
+    buttonInstances[name] = btn
+    return btn
+end
+
+-- Layout buttons
+addButtonToPage(pages["Main"], "AIMBOT: OFF", 10, 8, 160, 32, 14)
+addButtonToPage(pages["Main"], "KILL ALL: OFF", 10, 52, 160, 32, 14)
+addButtonToPage(pages["Main"], "TELEPORT ALL", 10, 96, 160, 32, 14)
+addButtonToPage(pages["Main"], "HOLD PLAYERS: OFF", 10, 140, 160, 32, 14)
+
+addButtonToPage(pages["Legit"], "WALL CHECK: OFF", 10, 8, 160, 32, 14)
+addButtonToPage(pages["Legit"], "SPEED: OFF", 10, 52, 160, 32, 14)
+addButtonToPage(pages["Legit"], "SPIN: OFF", 10, 96, 160, 32, 14)
+
+addButtonToPage(pages["Teleports"], "TELEPORT ALL", 10, 8, 160, 32, 14)
+addButtonToPage(pages["Teleports"], "TELEPORT TO RANDOM", 10, 52, 160, 32, 14)
+
+-- Credits page
+local creditsLabel = Instance.new("TextLabel")
+creditsLabel.Size = UDim2.new(1, -12, 1, -12)
+creditsLabel.Position = UDim2.new(0, 6, 0, 6)
+creditsLabel.BackgroundTransparency = 1
+creditsLabel.Text = "BANDITS9SCRIPT™"
+creditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+creditsLabel.Font = Enum.Font.SourceSansBold
+creditsLabel.TextSize = 18
+creditsLabel.TextWrapped = true
+creditsLabel.Parent = pages["Credits"]
+
+-- Обводка для текста credits
+local creditsTextStroke = Instance.new("UIStroke")
+creditsTextStroke.Color = Color3.fromRGB(0, 0, 0)
+creditsTextStroke.Thickness = 2
+creditsTextStroke.Parent = creditsLabel
+
+local creditsStroke = Instance.new("UIStroke")
+creditsStroke.Color = Color3.fromRGB(255, 255, 255)
+creditsStroke.Thickness = 2
+creditsStroke.Parent = creditsLabel
+
+-- FOV circle
+local FOVCircle = Instance.new("Frame")
+FOVCircle.Name = "FOVCircle"
+FOVCircle.Size = UDim2.new(0, settings.FOV * 2, 0, settings.FOV * 2)
+FOVCircle.Position = UDim2.new(0, mouse.X - settings.FOV, 0, mouse.Y - settings.FOV)
+FOVCircle.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+FOVCircle.BackgroundTransparency = 0.9
+FOVCircle.BorderSizePixel = 0
+FOVCircle.Visible = true
+FOVCircle.Parent = ScreenGui
+local CircleCorner = Instance.new("UICorner"); CircleCorner.CornerRadius = UDim.new(1,0); CircleCorner.Parent = FOVCircle
+local CircleStroke = Instance.new("UIStroke"); CircleStroke.Color = Color3.fromRGB(255, 255, 255); CircleStroke.Thickness = 2; CircleStroke.Parent = FOVCircle
+
+-- Dragging for MainFrame
+local dragging, dragStart, startPos = false
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging, dragStart, startPos = true, input.Position, MainFrame.Position
+    end
+end)
+MainFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Tab switching
+for name, btn in pairs(tabButtons) do
+    btn.MouseButton1Click:Connect(function()
+        for k, page in pairs(pages) do
+            page.Visible = (k == name)
+        end
+    end)
+end
+
+-- ========== УЛУЧШЕННЫЙ AIMBOT С АВТОМАТИЧЕСКОЙ ЛЕВОЙ КНОПКОЙ ==========
+local aimbotConnection, speedConnection, spinConnection, killAllConnection, holdPlayersConnection
+local isSpeedActive, isSpinActive, isHoldingPlayers = false, false, false
+local currentTarget = nil
+local isMouseHeld = false
+local lastShootTime = 0
+
+-- Улучшенные функции для левой кнопки мыши
+local function holdLeftMouseButton()
+    if not isMouseHeld then
+        VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, true, game, 1)
+        isMouseHeld = true
+    end
+end
+
+local function releaseLeftMouseButton()
+    if isMouseHeld then
+        VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, false, game, 1)
+        isMouseHeld = false
+    end
+end
+
+-- Улучшенная проверка видимости
+local function isPlayerVisible(targetPlayer)
+    if not settings.VisibleCheck then return true end
+    local camera = Workspace.CurrentCamera
+    local targetCharacter = targetPlayer.Character
+    if not targetCharacter then return false end
+    
+    local head = targetCharacter:FindFirstChild("Head")
+    if not head then return false end
+    
+    local rayOrigin = camera.CFrame.Position
+    local rayDirection = (head.Position - rayOrigin).Unit * 1000
+    
+    local ray = Ray.new(rayOrigin, rayDirection)
+    local ignoreList = {player.Character, camera}
+    local hit, hitPosition = Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
+    
+    if hit then
+        local hitCharacter = hit:FindFirstAncestorOfClass("Model")
+        return hitCharacter == targetCharacter
+    end
+    
+    return false
+end
+
+-- Улучшенный поиск цели в FOV
+local function getClosestPlayerInFOV()
+    local closestPlayer, closestDistance = nil, settings.FOV
+    local camera = Workspace.CurrentCamera
+    
+    for _, v in pairs(Players:GetPlayers()) do
+        if v == player then continue end
+        if not v.Character then continue end
+        
+        local humanoid = v.Character:FindFirstChild("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then continue end
+        
+        local head = v.Character:FindFirstChild("Head")
+        if not head then continue end
+        
+        local screenPoint, onScreen = camera:WorldToViewportPoint(head.Position)
+        
+        if onScreen then
+            local mousePos = Vector2.new(mouse.X, mouse.Y)
+            local playerPos = Vector2.new(screenPoint.X, screenPoint.Y)
+            local distance = (mousePos - playerPos).Magnitude
+            
+            if distance <= closestDistance then
+                local isVisible = isPlayerVisible(v)
+                if isVisible then
+                    closestDistance, closestPlayer = distance, v
+                end
+            end
+        end
+    end
+    return closestPlayer, closestDistance
+end
+
+-- Улучшенное прицеливание в голову с автоматической стрельбой
+local function aimAtPlayer(target)
+    if not target or not target.Character then 
+        releaseLeftMouseButton()
+        return false 
+    end
+    
+    local camera = Workspace.CurrentCamera
+    local targetCharacter = target.Character
+    
+    local head = targetCharacter:FindFirstChild("Head")
+    if not head then 
+        releaseLeftMouseButton()
+        return false 
+    end
+    
+    local targetPosition = head.Position
+    
+    -- Плавное прицеливание
+    local currentCFrame = camera.CFrame
+    local targetCFrame = CFrame.lookAt(currentCFrame.Position, targetPosition)
+    camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.9)
+    
+    -- АВТОМАТИЧЕСКАЯ СТРЕЛЬБА - нажимаем левую кнопку мыши когда цель найдена
+    if settings.AutoShoot then
+        local currentTime = tick()
+        if currentTime - lastShootTime >= settings.ShootDelay then
+            holdLeftMouseButton()
+            lastShootTime = currentTime
+        end
+    end
+    
+    return true
+end
+
+-- Улучшенный AimBot главная функция
+local function startAimbot()
+    if aimbotConnection then aimbotConnection:Disconnect() end
+    
+    aimbotConnection = RunService.RenderStepped:Connect(function()
+        if not settings.Enabled then 
+            FOVCircle.UIStroke.Color = Color3.fromRGB(255, 0, 0)
+            releaseLeftMouseButton()
+            return 
+        end
+        
+        local closestPlayer, distance = getClosestPlayerInFOV()
+        if closestPlayer then
+            local success = aimAtPlayer(closestPlayer)
+            if success then
+                FOVCircle.UIStroke.Color = Color3.fromRGB(0, 255, 0) -- Зеленый когда цель найдена и стреляем
+                currentTarget = closestPlayer
+            else
+                FOVCircle.UIStroke.Color = Color3.fromRGB(255, 255, 0) -- Желтый когда проблема с прицеливанием
+                releaseLeftMouseButton()
+            end
+        else
+            FOVCircle.UIStroke.Color = Color3.fromRGB(255, 0, 0) -- Красный когда нет целей
+            releaseLeftMouseButton()
+            currentTarget = nil
+        end
+    end)
+end
+
+-- Остальные функции
+local function getRandomAlivePlayer()
+    local alivePlayers = {}
+    for _, v in pairs(Players:GetPlayers()) do
+        if v == player then continue end
+        if not v.Character then continue end
+        local humanoid = v.Character:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            table.insert(alivePlayers, v)
+        end
+    end
+    return #alivePlayers > 0 and alivePlayers[math.random(1, #alivePlayers)] or nil
+end
+
+local function teleportToPlayer(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return false end
+    local targetRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if targetRoot and myRoot then
+        local offset = Vector3.new(math.random(-5, 5), 0, math.random(-5, 5))
+        myRoot.CFrame = targetRoot.CFrame + offset
+        return true
+    end
+    return false
+end
+
+local function isPlayerAlive(targetPlayer)
+    if not targetPlayer or not targetPlayer.Character then return false end
+    local humanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+    return humanoid and humanoid.Health > 0
+end
+
+local function startSpeedGlitch()
+    if speedConnection then speedConnection:Disconnect() end
+    isSpeedActive = true
+    
+    speedConnection = RunService.Heartbeat:Connect(function()
+        local character = player.Character
+        if character and isSpeedActive then
+            local humanoid = character:FindFirstChild("Humanoid")
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if humanoid and rootPart then
+                humanoid.WalkSpeed = 100
+                if humanoid.Jump then
+                    local camera = Workspace.CurrentCamera
+                    local direction = camera.CFrame.LookVector
+                    rootPart.Velocity = rootPart.Velocity + direction * 100
+                end
+            end
+        end
+    end)
+end
+
+local function startSpin()
+    if spinConnection then spinConnection:Disconnect() end
+    isSpinActive = true
+    
+    spinConnection = RunService.Heartbeat:Connect(function()
+        local character = player.Character
+        if character and isSpinActive then
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                local currentCFrame = rootPart.CFrame
+                local newRotation = currentCFrame * CFrame.Angles(0, math.rad(50), 0)
+                rootPart.CFrame = newRotation
+            end
+        end
+    end)
+end
+
+local function startKillAll()
+    if killAllConnection then killAllConnection:Disconnect() end
+    settings.KillAllEnabled = true
+    currentTarget = getRandomAlivePlayer()
+    
+    if not currentTarget then
+        print("❌ Нет живых игроков!")
+        settings.KillAllEnabled = false
+        buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: OFF"
+        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        return
+    end
+    
+    print("🎯 Начинаем Kill All! Первая цель: " .. currentTarget.Name)
+    teleportToPlayer(currentTarget)
+    
+    killAllConnection = RunService.Heartbeat:Connect(function()
+        if not settings.KillAllEnabled then return end
+        
+        if not isPlayerAlive(currentTarget) then
+            currentTarget = getRandomAlivePlayer()
+            if currentTarget then
+                teleportToPlayer(currentTarget)
+                print("🎯 Новая цель: " .. currentTarget.Name)
+            else
+                print("✅ Все игроки мертвы!")
+                settings.KillAllEnabled = false
+                buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: OFF"
+                buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+                return
+            end
+        end
+        
+        local myCharacter = player.Character
+        local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+        local targetRoot = currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart")
+        
+        if myRoot and targetRoot then
+            local angle = tick() * 10
+            local radius = 5
+            local x, z = math.cos(angle) * radius, math.sin(angle) * radius
+            local offset = Vector3.new(x, 0, z)
+            myRoot.CFrame = CFrame.new(targetRoot.Position + offset, targetRoot.Position)
+        end
+    end)
+end
+
+local function teleportAllPlayers()
+    local myCharacter = player.Character
+    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+    if not myRoot then
+        print("❌ Не могу найти своего персонажа!")
+        return
+    end
+    
+    print("🌀 Телепортирую всех игроков ко мне...")
+    local teleportPosition = myRoot.Position + myRoot.CFrame.LookVector * 10
+    local teleportCFrame = CFrame.new(teleportPosition)
+    
+    for _, v in pairs(Players:GetPlayers()) do
+        if v == player then continue end
+        local targetCharacter = v.Character
+        local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+        if targetRoot then
+            targetRoot.CFrame = teleportCFrame
+        end
+    end
+    print("🎯 Все игроки телепортированы!")
+end
+
+local function startHoldingPlayers()
+    if holdPlayersConnection then holdPlayersConnection:Disconnect() end
+    isHoldingPlayers = true
+    local myCharacter = player.Character
+    local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+    
+    local holdPosition = myRoot.Position + myRoot.CFrame.LookVector * 10
+    
+    holdPlayersConnection = RunService.Heartbeat:Connect(function()
+        if not isHoldingPlayers then return end
+        for _, v in pairs(Players:GetPlayers()) do
+            if v == player then continue end
+            local targetCharacter = v.Character
+            local targetRoot = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart")
+            if targetRoot then
+                targetRoot.CFrame = CFrame.new(holdPosition)
+                targetRoot.Velocity = Vector3.new(0, 0, 0)
+            end
+        end
+    end)
+    print("🔒 Игроки зафиксированы!")
+end
+
+local function stopHoldingPlayers()
+    isHoldingPlayers = false
+    if holdPlayersConnection then
+        holdPlayersConnection:Disconnect()
+        holdPlayersConnection = nil
+    end
+    print("🔓 Игроки разблокированы")
+end
+
+-- Обработчики кнопок
+buttonInstances["AIMBOT: OFF"].MouseButton1Click:Connect(function()
+    settings.Enabled = not settings.Enabled
+    if settings.Enabled then
+        buttonInstances["AIMBOT: OFF"].Text = "AIMBOT: ON"
+        buttonInstances["AIMBOT: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+        startAimbot()
+        print("🎯 УЛУЧШЕННЫЙ AimBot ВКЛЮЧЕН (FOV: 100)")
+        print("🖱️ Автоматическая левая кнопка мыши АКТИВИРОВАНА!")
+    else
+        buttonInstances["AIMBOT: OFF"].Text = "AIMBOT: OFF"
+        buttonInstances["AIMBOT: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        if aimbotConnection then aimbotConnection:Disconnect() end
+        releaseLeftMouseButton()
+        FOVCircle.UIStroke.Color = Color3.fromRGB(255, 0, 0)
+        print("🎯 AimBot ВЫКЛЮЧЕН")
+    end
+end)
+
+buttonInstances["WALL CHECK: OFF"].MouseButton1Click:Connect(function()
+    settings.VisibleCheck = not settings.VisibleCheck
+    if settings.VisibleCheck then
+        buttonInstances["WALL CHECK: OFF"].Text = "WALL CHECK: ON"
+        buttonInstances["WALL CHECK: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+        print("🔍 Проверка стен ВКЛЮЧЕНА")
+    else
+        buttonInstances["WALL CHECK: OFF"].Text = "WALL CHECK: OFF"
+        buttonInstances["WALL CHECK: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        print("🔍 Проверка стен ВЫКЛЮЧЕНА")
+    end
+end)
+
+buttonInstances["SPEED: OFF"].MouseButton1Click:Connect(function()
+    if isSpeedActive then
+        if speedConnection then speedConnection:Disconnect() end
+        isSpeedActive = false
+        buttonInstances["SPEED: OFF"].Text = "SPEED: OFF"
+        buttonInstances["SPEED: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        local character = player.Character
+        if character then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then humanoid.WalkSpeed = 16 end
+        end
+        print("🚫 SpeedGlitch ВЫКЛЮЧЕН")
+    else
+        startSpeedGlitch()
+        buttonInstances["SPEED: OFF"].Text = "SPEED: ON"
+        buttonInstances["SPEED: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+        print("⚡ SpeedGlitch ВКЛЮЧЕН")
+    end
+end)
+
+buttonInstances["SPIN: OFF"].MouseButton1Click:Connect(function()
+    if isSpinActive then
+        if spinConnection then spinConnection:Disconnect() end
+        isSpinActive = false
+        buttonInstances["SPIN: OFF"].Text = "SPIN: OFF"
+        buttonInstances["SPIN: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        print("🌀 Krutilka ВЫКЛЮЧЕНА")
+    else
+        startSpin()
+        buttonInstances["SPIN: OFF"].Text = "SPIN: ON"
+        buttonInstances["SPIN: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+        print("🌀 Krutilka ВКЛЮЧЕНА")
+    end
+end)
+
+buttonInstances["KILL ALL: OFF"].MouseButton1Click:Connect(function()
+    if settings.KillAllEnabled then
+        settings.KillAllEnabled = false
+        if killAllConnection then killAllConnection:Disconnect() end
+        buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: OFF"
+        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        print("🚫 Kill All ВЫКЛЮЧЕН")
+    else
+        startKillAll()
+        buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: ON"
+        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    end
+end)
+
+buttonInstances["TELEPORT ALL"].MouseButton1Click:Connect(function()
+    teleportAllPlayers()
+end)
+
+buttonInstances["HOLD PLAYERS: OFF"].MouseButton1Click:Connect(function()
+    if isHoldingPlayers then
+        stopHoldingPlayers()
+        buttonInstances["HOLD PLAYERS: OFF"].Text = "HOLD PLAYERS: OFF"
+        buttonInstances["HOLD PLAYERS: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+    else
+        startHoldingPlayers()
+        buttonInstances["HOLD PLAYERS: OFF"].Text = "HOLD PLAYERS: ON"
+        buttonInstances["HOLD PLAYERS: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+    end
+end)
+
+-- Обновление FOV круга
+mouse.Move:Connect(function()
+    FOVCircle.Position = UDim2.new(0, mouse.X - settings.FOV, 0, mouse.Y - settings.FOV)
+end)
+
+-- Перезапуск aimbot при смене персонажа
+player.CharacterAdded:Connect(function(character)
+    print("♻️ Персонаж обновлен")
+    if settings.Enabled then
+        wait(2)
+        startAimbot()
+    end
+end)
+
+print("✅ BANDITS9SCRIPT GUI загружен!")
+print("🎯 УЛУЧШЕННЫЙ AimBot: FOV 100, автоматическая левая кнопка мыши")
+print("🖱️ AimBot автоматически нажимает левую кнопку мыши при наведении на игрока!")
+print("⚡ Все функции готовы к использованию!")
