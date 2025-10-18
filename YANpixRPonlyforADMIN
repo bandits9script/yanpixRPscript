@@ -1,44 +1,44 @@
--- Bandits9Script GUI — Полностью рабочий AimBot
--- LocalScript для StarterPlayerScripts
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 
-player:WaitForChild("PlayerGui")
-
--- Настройки
 local settings = {
-    Enabled = false,
-    FOV = 100,
-    VisibleCheck = false,
-    AutoShoot = true,
-    ShootDelay = 0.1,
-    AimAtHead = true,
+    HitboxEnabled = false,
+    HitboxSize = 5,
+    AutoFire = false,
     KillAllEnabled = false,
-    ChamsEnabled = false
+    SpeedEnabled = false,
+    SpinEnabled = false,
+    AntiKill = false,
+    ChamsEnabled = false,
+    FreezeEnabled = false
 }
 
--- ========== GUI ==========
+local bodyParts = {"Head"}
+local originalSizes = {} 
+
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "BANDITS9SCRIPT_GUI"
-ScreenGui.Parent = player.PlayerGui
+ScreenGui.Name = "AlwayLose_GUI"
+ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
-ScreenGui.DisplayOrder = 999
+ScreenGui.DisplayOrder = 9999
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 360, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -180, 0.5, -125)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
-MainFrame.BackgroundTransparency = 0.1
+MainFrame.Size = UDim2.new(0, 500, 0, 230)
+MainFrame.Position = UDim2.new(0.5, -250, 0.5, -115)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BackgroundTransparency = 0.2
 MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 9999
 MainFrame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner")
@@ -46,43 +46,48 @@ UICorner.CornerRadius = UDim.new(0, 10)
 UICorner.Parent = MainFrame
 
 local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(255, 255, 255)
-UIStroke.Thickness = 2
+UIStroke.Color = Color3.fromRGB(255, 0, 0)
+UIStroke.Thickness = 3
 UIStroke.Parent = MainFrame
 
--- Header
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 28)
 Title.Position = UDim2.new(0, 0, 0, 0)
-Title.BackgroundColor3 = Color3.fromRGB(30, 30, 60)
+Title.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
 Title.BackgroundTransparency = 0.2
-Title.Text = "BANDITS9SCRIPT™"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "ALWAYLOSE"
+Title.TextColor3 = Color3.fromRGB(255, 0, 0)
 Title.Font = Enum.Font.SourceSansBold
 Title.TextSize = 16
 Title.BorderSizePixel = 0
+Title.ZIndex = 10000
 Title.Parent = MainFrame
 
--- Обводка для текста заголовка
 local TitleTextStroke = Instance.new("UIStroke")
 TitleTextStroke.Color = Color3.fromRGB(0, 0, 0)
 TitleTextStroke.Thickness = 2
 TitleTextStroke.Parent = Title
+
+local TitleGlow = Instance.new("UIStroke")
+TitleGlow.Color = Color3.fromRGB(255, 50, 50)
+TitleGlow.Thickness = 3
+TitleGlow.Transparency = 0.5
+TitleGlow.Parent = Title
 
 local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 8)
 TitleCorner.Parent = Title
 
 local TitleStroke = Instance.new("UIStroke")
-TitleStroke.Color = Color3.fromRGB(255, 255, 255)
-TitleStroke.Thickness = 1
+TitleStroke.Color = Color3.fromRGB(255, 0, 0)
+TitleStroke.Thickness = 2
 TitleStroke.Parent = Title
 
--- Left tabs
 local TabsFrame = Instance.new("Frame")
-TabsFrame.Size = UDim2.new(0, 100, 1, -34)
+TabsFrame.Size = UDim2.new(0, 120, 1, -34)
 TabsFrame.Position = UDim2.new(0, 8, 0, 34)
 TabsFrame.BackgroundTransparency = 1
+TabsFrame.ZIndex = 10000
 TabsFrame.Parent = MainFrame
 
 local tabNames = {"Main", "Legit", "ESP/CHAMS", "Credits"}
@@ -92,12 +97,13 @@ for i, name in ipairs(tabNames) do
     btn.Name = name .. "Tab"
     btn.Size = UDim2.new(1, 0, 0, 30)
     btn.Position = UDim2.new(0, 0, 0, (i-1)*35)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 80)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
     btn.Text = name
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 12
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.BorderSizePixel = 0
+    btn.ZIndex = 10001
     btn.Parent = TabsFrame
     
     local btnTextStroke = Instance.new("UIStroke")
@@ -105,22 +111,43 @@ for i, name in ipairs(tabNames) do
     btnTextStroke.Thickness = 2
     btnTextStroke.Parent = btn
     
-    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0,6); c.Parent = btn
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0,6)
+    c.Parent = btn
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 255, 255)
-    stroke.Thickness = 1
+    stroke.Color = Color3.fromRGB(255, 0, 0)
+    stroke.Thickness = 2
     stroke.Parent = btn
+    
+    local glowEffect = Instance.new("UIStroke")
+    glowEffect.Color = Color3.fromRGB(255, 100, 100)
+    glowEffect.Thickness = 3
+    glowEffect.Transparency = 1
+    glowEffect.Parent = btn
+    glowEffect.Name = "GlowEffect"
+    
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 0, 0)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(255, 100, 100)}):Play()
+        TweenService:Create(glowEffect, TweenInfo.new(0.2), {Transparency = 0}):Play()
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 0, 0)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(255, 0, 0)}):Play()
+        TweenService:Create(glowEffect, TweenInfo.new(0.2), {Transparency = 1}):Play()
+    end)
+    
     tabButtons[name] = btn
 end
 
--- Right content area
 local ContentFrame = Instance.new("Frame")
-ContentFrame.Size = UDim2.new(1, -116, 1, -34)
-ContentFrame.Position = UDim2.new(0, 108, 0, 34)
+ContentFrame.Size = UDim2.new(1, -136, 1, -34)
+ContentFrame.Position = UDim2.new(0, 128, 0, 34)
 ContentFrame.BackgroundTransparency = 1
+ContentFrame.ZIndex = 10000
 ContentFrame.Parent = MainFrame
 
--- Create pages
 local pages = {}
 for _, name in ipairs(tabNames) do
     local page = Instance.new("Frame")
@@ -129,25 +156,26 @@ for _, name in ipairs(tabNames) do
     page.Position = UDim2.new(0, 0, 0, 0)
     page.BackgroundTransparency = 1
     page.Visible = false
+    page.ZIndex = 10000
     page.Parent = ContentFrame
     pages[name] = page
 end
 pages["Main"].Visible = true
 
--- Helper to create buttons
 local buttonInstances = {}
 
 local function addButtonToPage(page, name, x, y, w, h, textSize)
     local btn = Instance.new("TextButton")
     btn.Name = name:gsub(" ", "_")
-    btn.Size = UDim2.new(0, w or 140, 0, h or 30)
+    btn.Size = UDim2.new(0, w or 160, 0, h or 32)
     btn.Position = UDim2.new(0, x or 0, 0, y or 0)
-    btn.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
     btn.Text = name
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = textSize or 14
     btn.BorderSizePixel = 0
+    btn.ZIndex = 10001
     btn.Parent = page
     
     local btnTextStroke = Instance.new("UIStroke")
@@ -155,37 +183,64 @@ local function addButtonToPage(page, name, x, y, w, h, textSize)
     btnTextStroke.Thickness = 2
     btnTextStroke.Parent = btn
     
-    local uc = Instance.new("UICorner"); uc.CornerRadius = UDim.new(0,8); uc.Parent = btn
+    local uc = Instance.new("UICorner")
+    uc.CornerRadius = UDim.new(0,8)
+    uc.Parent = btn
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(255, 255, 255)
+    stroke.Color = Color3.fromRGB(255, 0, 0)
     stroke.Thickness = 2
     stroke.Parent = btn
+    
+    local glowEffect = Instance.new("UIStroke")
+    glowEffect.Color = Color3.fromRGB(255, 100, 100)
+    glowEffect.Thickness = 4
+    glowEffect.Transparency = 1
+    glowEffect.Parent = btn
+    glowEffect.Name = "GlowEffect"
+    
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(100, 0, 0)}):Play()
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(255, 100, 100)}):Play()
+        TweenService:Create(glowEffect, TweenInfo.new(0.2), {Transparency = 0}):Play()
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        if not string.find(btn.Text, "ON") then
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 0, 0)}):Play()
+        else
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0, 80, 0)}):Play()
+        end
+        TweenService:Create(stroke, TweenInfo.new(0.2), {Color = Color3.fromRGB(255, 0, 0)}):Play()
+        TweenService:Create(glowEffect, TweenInfo.new(0.2), {Transparency = 1}):Play()
+    end)
+    
     buttonInstances[name] = btn
     return btn
 end
 
--- Layout buttons
-addButtonToPage(pages["Main"], "AIMBOT: OFF", 10, 8, 160, 32, 14)
-addButtonToPage(pages["Main"], "KILL ALL: OFF", 10, 52, 160, 32, 14)
+addButtonToPage(pages["Main"], "HITBOX: OFF", 10, 8, 180, 32, 14)
+addButtonToPage(pages["Main"], "AUTO FIRE: OFF", 10, 52, 180, 32, 14)
+addButtonToPage(pages["Main"], "KILL ALL: OFF", 10, 96, 180, 32, 14)
 
-addButtonToPage(pages["Legit"], "WALL CHECK: OFF", 10, 8, 160, 32, 14)
-addButtonToPage(pages["Legit"], "SPEED: OFF", 10, 52, 160, 32, 14)
-addButtonToPage(pages["Legit"], "SPIN: OFF", 10, 96, 160, 32, 14)
+local freezeButton = addButtonToPage(pages["Main"], "❄️ FREEZE: OFF", 200, 8, 160, 32, 12)
 
--- Кнопки для ESP/CHAMS
-addButtonToPage(pages["ESP/CHAMS"], "CHAMS: OFF", 10, 8, 160, 32, 14)
+addButtonToPage(pages["Legit"], "SPEED: OFF", 10, 8, 180, 32, 14)
+addButtonToPage(pages["Legit"], "SPIN: OFF", 10, 52, 180, 32, 14)
+addButtonToPage(pages["Legit"], "ANTI KILL: OFF", 10, 96, 180, 32, 14)
 
--- Credits page
+addButtonToPage(pages["ESP/CHAMS"], "CHAMS: OFF", 10, 8, 180, 32, 14)
+
 local creditsLabel = Instance.new("TextLabel")
 creditsLabel.Size = UDim2.new(1, -12, 1, -12)
 creditsLabel.Position = UDim2.new(0, 6, 0, 6)
 creditsLabel.BackgroundTransparency = 1
-creditsLabel.Text = "BANDITS9SCRIPT™\n\nBETA 0-03\n\nПОДПИШИСЬ НА ТЕЛЕГРАМ ПЛИС"
+creditsLabel.Text = "ALWAYLOSE\n\nBETA 00.2\n\nRED THEME"
 creditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 creditsLabel.Font = Enum.Font.SourceSansBold
 creditsLabel.TextSize = 16
 creditsLabel.TextWrapped = true
 creditsLabel.TextYAlignment = Enum.TextYAlignment.Top
+creditsLabel.ZIndex = 10000
 creditsLabel.Parent = pages["Credits"]
 
 local creditsTextStroke = Instance.new("UIStroke")
@@ -194,166 +249,596 @@ creditsTextStroke.Thickness = 2
 creditsTextStroke.Parent = creditsLabel
 
 local creditsStroke = Instance.new("UIStroke")
-creditsStroke.Color = Color3.fromRGB(255, 255, 255)
+creditsStroke.Color = Color3.fromRGB(255, 0, 0)
 creditsStroke.Thickness = 2
 creditsStroke.Parent = creditsLabel
 
--- FOV circle
-local FOVCircle = Instance.new("Frame")
-FOVCircle.Name = "FOVCircle"
-FOVCircle.Size = UDim2.new(0, settings.FOV * 2, 0, settings.FOV * 2)
-FOVCircle.Position = UDim2.new(0, mouse.X - settings.FOV, 0, mouse.Y - settings.FOV)
-FOVCircle.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-FOVCircle.BackgroundTransparency = 0.9
-FOVCircle.BorderSizePixel = 0
-FOVCircle.Visible = true
-FOVCircle.Parent = ScreenGui
-local CircleCorner = Instance.new("UICorner"); CircleCorner.CornerRadius = UDim.new(1,0); CircleCorner.Parent = FOVCircle
-local CircleStroke = Instance.new("UIStroke"); CircleStroke.Color = Color3.fromRGB(255, 255, 255); CircleStroke.Thickness = 2; CircleStroke.Parent = FOVCircle
+local hitboxGUI
+local isHitboxGUIVisible = false
 
--- ========== HIGHLIGHT CHAMS СИСТЕМА ==========
-local chamsEnabled = false
-local highlightFolder = Instance.new("Folder")
-highlightFolder.Name = "HighlightFolder"
-highlightFolder.Parent = ScreenGui
-
-local playerHighlights = {}
-local damageConnections = {}
-local lastHealthValues = {}
-
--- Цвета для Highlight
-local normalHighlightColor = Color3.fromRGB(180, 120, 255) -- Мягкий фиолетовый
-local damageHighlightColor = Color3.fromRGB(255, 80, 80)   -- Красный при уроне
-
-local function createHighlight(character, player)
-    if not character then return end
-    
-    -- Удаляем старый highlight если есть
-    if playerHighlights[player] then
-        playerHighlights[player]:Destroy()
-        playerHighlights[player] = nil
+local function createHitboxGUI()
+    if hitboxGUI then
+        hitboxGUI:Destroy()
     end
     
-    -- Создаем Highlight
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "Highlight_" .. player.Name
-    highlight.Adornee = character
-    highlight.FillColor = normalHighlightColor
-    highlight.FillTransparency = 0.7
-    highlight.OutlineColor = normalHighlightColor
-    highlight.OutlineTransparency = 0.3
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    highlight.Parent = highlightFolder
-    
-    playerHighlights[player] = highlight
-    lastHealthValues[player] = character:FindFirstChild("Humanoid") and character.Humanoid.Health or 100
-    
-    -- Отслеживаем урон (только когда HP уменьшается)
-    local humanoid = character:WaitForChild("Humanoid")
-    damageConnections[player] = humanoid.HealthChanged:Connect(function(newHealth)
-        local oldHealth = lastHealthValues[player] or newHealth
-        
-        -- Проверяем, что HP действительно уменьшилось (игрок получил урон)
-        if newHealth < oldHealth then
-            -- Игрок получил урон - меняем цвет на красный
-            if playerHighlights[player] and playerHighlights[player].Parent then
-                playerHighlights[player].FillColor = damageHighlightColor
-                playerHighlights[player].OutlineColor = damageHighlightColor
-                
-                -- Возвращаем обычный цвет через 1.25 секунды
-                task.delay(1.25, function()
-                    if playerHighlights[player] and playerHighlights[player].Parent then
-                        playerHighlights[player].FillColor = normalHighlightColor
-                        playerHighlights[player].OutlineColor = normalHighlightColor
-                    end
-                end)
-            end
-        end
-        
-        -- Обновляем последнее значение HP
-        lastHealthValues[player] = newHealth
+    hitboxGUI = Instance.new("ScreenGui")
+    hitboxGUI.Name = "HitboxSettingsGUI"
+    hitboxGUI.Parent = CoreGui
+    hitboxGUI.ResetOnSpawn = false
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 280, 0, 160)
+    frame.Position = UDim2.new(0.5, -140, 0.5, -80)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.2
+    frame.Active = true
+    frame.Draggable = true
+    frame.Parent = hitboxGUI
+
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.Parent = frame
+
+    local UIStroke = Instance.new("UIStroke")
+    UIStroke.Color = Color3.fromRGB(255, 0, 0)
+    UIStroke.Thickness = 3
+    UIStroke.Parent = frame
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Size = UDim2.new(1, 0, 0, 30)
+    titleLabel.Position = UDim2.new(0, 0, 0, 0)
+    titleLabel.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+    titleLabel.Text = "РАЗМЕР ХИТБОКСА"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    titleLabel.Font = Enum.Font.SourceSansBold
+    titleLabel.TextSize = 14
+    titleLabel.Parent = frame
+
+    local titleTextStroke = Instance.new("UIStroke")
+    titleTextStroke.Color = Color3.fromRGB(0, 0, 0)
+    titleTextStroke.Thickness = 2
+    titleTextStroke.Parent = titleLabel
+
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 10)
+    titleCorner.Parent = titleLabel
+
+    local sizeDisplay = Instance.new("TextLabel")
+    sizeDisplay.Size = UDim2.new(1, -20, 0, 20)
+    sizeDisplay.Position = UDim2.new(0, 10, 0, 35)
+    sizeDisplay.BackgroundTransparency = 1
+    sizeDisplay.Text = "Размер: " .. settings.HitboxSize
+    sizeDisplay.TextColor3 = Color3.fromRGB(255, 0, 0)
+    sizeDisplay.Font = Enum.Font.SourceSansBold
+    sizeDisplay.TextSize = 12
+    sizeDisplay.Parent = frame
+
+    local sizeTextStroke = Instance.new("UIStroke")
+    sizeTextStroke.Color = Color3.fromRGB(0, 0, 0)
+    sizeTextStroke.Thickness = 2
+    sizeTextStroke.Parent = sizeDisplay
+
+    local mainSliderFrame = Instance.new("Frame")
+    mainSliderFrame.Size = UDim2.new(0.9, 0, 0, 50)
+    mainSliderFrame.Position = UDim2.new(0.05, 0, 0, 60)
+    mainSliderFrame.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+    mainSliderFrame.Parent = frame
+
+    local mainSliderCorner = Instance.new("UICorner")
+    mainSliderCorner.CornerRadius = UDim.new(0, 8)
+    mainSliderCorner.Parent = mainSliderFrame
+
+    local mainSliderStroke = Instance.new("UIStroke")
+    mainSliderStroke.Color = Color3.fromRGB(255, 0, 0)
+    mainSliderStroke.Thickness = 2
+    mainSliderStroke.Parent = mainSliderFrame
+
+    local sliderLabel = Instance.new("TextLabel")
+    sliderLabel.Size = UDim2.new(1, 0, 0, 15)
+    sliderLabel.Position = UDim2.new(0, 0, 0, 2)
+    sliderLabel.BackgroundTransparency = 1
+    sliderLabel.Text = "РАЗМЕР ХИТБОКСА:"
+    sliderLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    sliderLabel.Font = Enum.Font.SourceSansBold
+    sliderLabel.TextSize = 11
+    sliderLabel.Parent = mainSliderFrame
+
+    local sliderTextStroke = Instance.new("UIStroke")
+    sliderTextStroke.Color = Color3.fromRGB(0, 0, 0)
+    sliderTextStroke.Thickness = 1
+    sliderTextStroke.Parent = sliderLabel
+
+    local sliderBackground = Instance.new("Frame")
+    sliderBackground.Size = UDim2.new(0.8, 0, 0, 12)
+    sliderBackground.Position = UDim2.new(0.1, 0, 0, 20)
+    sliderBackground.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+    sliderBackground.Parent = mainSliderFrame
+
+    local sliderCorner = Instance.new("UICorner")
+    sliderCorner.CornerRadius = UDim.new(1, 0)
+    sliderCorner.Parent = sliderBackground
+
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Size = UDim2.new((settings.HitboxSize - 1) / 19, 0, 1, 0)
+    sliderFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    sliderFill.Parent = sliderBackground
+
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(1, 0)
+    fillCorner.Parent = sliderFill
+
+    local sliderButton = Instance.new("TextButton")
+    sliderButton.Size = UDim2.new(0, 20, 0, 20)
+    sliderButton.Position = UDim2.new((settings.HitboxSize - 1) / 19, -10, 0.5, -10)
+    sliderButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    sliderButton.Text = ""
+    sliderButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+    sliderButton.Font = Enum.Font.SourceSansBold
+    sliderButton.TextSize = 10
+    sliderButton.AutoButtonColor = false
+    sliderButton.Parent = sliderBackground
+
+    local buttonTextStroke = Instance.new("UIStroke")
+    buttonTextStroke.Color = Color3.fromRGB(0, 0, 0)
+    buttonTextStroke.Thickness = 2
+    buttonTextStroke.Parent = sliderButton
+
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(1, 0)
+    buttonCorner.Parent = sliderButton
+
+    local closeButton = Instance.new("TextButton")
+    closeButton.Size = UDim2.new(0.8, 0, 0, 30)
+    closeButton.Position = UDim2.new(0.1, 0, 0, 120)
+    closeButton.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+    closeButton.Text = "ЗАКРЫТЬ"
+    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    closeButton.Font = Enum.Font.SourceSansBold
+    closeButton.TextSize = 12
+    closeButton.Parent = frame
+
+    local closeTextStroke = Instance.new("UIStroke")
+    closeTextStroke.Color = Color3.fromRGB(0, 0, 0)
+    closeTextStroke.Thickness = 2
+    closeTextStroke.Parent = closeButton
+
+    local closeCorner = Instance.new("UICorner")
+    closeCorner.CornerRadius = UDim.new(0, 8)
+    closeCorner.Parent = closeButton
+
+    closeButton.MouseEnter:Connect(function()
+        TweenService:Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(100, 0, 0)}):Play()
     end)
-end
+    
+    closeButton.MouseLeave:Connect(function()
+        TweenService:Create(closeButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 0, 0)}):Play()
+    end)
 
-local function removeHighlight(player)
-    if playerHighlights[player] then
-        playerHighlights[player]:Destroy()
-        playerHighlights[player] = nil
-    end
-    
-    if damageConnections[player] then
-        damageConnections[player]:Disconnect()
-        damageConnections[player] = nil
-    end
-    
-    lastHealthValues[player] = nil
-end
+    sliderButton.MouseButton1Down:Connect(function()
+        local connection
+        connection = UserInputService.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local relativeX = math.clamp(input.Position.X - sliderBackground.AbsolutePosition.X, 0, sliderBackground.AbsoluteSize.X)
+                local newSize = math.floor((relativeX / sliderBackground.AbsoluteSize.X) * 19) + 1
+                
+                settings.HitboxSize = newSize
+                sliderButton.Position = UDim2.new(relativeX / sliderBackground.AbsoluteSize.X, -10, 0.5, -10)
+                sliderFill.Size = UDim2.new(relativeX / sliderBackground.AbsoluteSize.X, 0, 1, 0)
+                sizeDisplay.Text = "Размер: " .. newSize
+            end
+        end)
 
-local function enableChams()
-    chamsEnabled = true
-    highlightFolder:ClearAllChildren()
-    playerHighlights = {}
-    damageConnections = {}
-    lastHealthValues = {}
-    
-    -- Создаем highlights для всех существующих игроков
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= Players.LocalPlayer and otherPlayer.Character then
-            createHighlight(otherPlayer.Character, otherPlayer)
-        end
-    end
-    
-    -- Отслеживаем появление новых игроков
-    Players.PlayerAdded:Connect(function(newPlayer)
-        newPlayer.CharacterAdded:Connect(function(character)
-            if chamsEnabled then
-                createHighlight(character, newPlayer)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                connection:Disconnect()
             end
         end)
     end)
-    
-    -- Отслеживаем появление персонажей существующих игроков
-    for _, otherPlayer in pairs(Players:GetPlayers()) do
-        if otherPlayer ~= Players.LocalPlayer then
-            otherPlayer.CharacterAdded:Connect(function(character)
-                if chamsEnabled then
-                    createHighlight(character, otherPlayer)
-                end
-            end)
+
+    closeButton.MouseButton1Click:Connect(function()
+        hitboxGUI.Enabled = false
+        isHitboxGUIVisible = false
+    end)
+
+    return hitboxGUI
+end
+
+local function ResizeBodyPart(targetPlayer, partName, size)
+    if targetPlayer == player then return end  
+    if not settings.HitboxEnabled then return end
+
+    local character = targetPlayer.Character
+    if not character then return end
+
+    local part = character:FindFirstChild(partName)
+    if not part then return end
+
+    if not originalSizes[part] then
+        originalSizes[part] = part.Size
+    end
+
+    local minSize = 1
+    local newSize = math.max(size, minSize)
+
+    part.Size = Vector3.new(newSize, newSize, newSize)
+    part.Transparency = 0.3
+    part.CanCollide = false
+    part.Massless = true
+    part.BrickColor = BrickColor.new("Bright red")
+    part.Material = Enum.Material.Neon
+
+    if not part:FindFirstChild("HitboxLight") then
+        local pointLight = Instance.new("PointLight")
+        pointLight.Name = "HitboxLight"
+        pointLight.Brightness = 3
+        pointLight.Range = 15
+        pointLight.Color = Color3.fromRGB(255, 0, 0)
+        pointLight.Parent = part
+    end
+end
+
+local function ResetBodyPart(targetPlayer, partName)
+    local character = targetPlayer.Character
+    if not character then return end
+
+    local part = character:FindFirstChild(partName)
+    if not part then return end
+
+    if originalSizes[part] then
+        part.Size = originalSizes[part]
+        part.Transparency = 0
+        part.CanCollide = true
+        part.BrickColor = BrickColor.new("Medium stone grey")
+        part.Material = Enum.Material.Plastic
+        
+        local light = part:FindFirstChild("HitboxLight")
+        if light then
+            light:Destroy()
         end
     end
+end
+
+local function updateOtherPlayers()
+    for _, otherPlayer in ipairs(Players:GetPlayers()) do
+        if otherPlayer ~= player and otherPlayer.Character then
+            for _, partName in ipairs(bodyParts) do
+                if settings.HitboxEnabled then
+                    ResizeBodyPart(otherPlayer, partName, settings.HitboxSize)
+                else
+                    ResetBodyPart(otherPlayer, partName)
+                end
+            end
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    updateOtherPlayers()
+end)
+
+local chamsEnabled = false
+local highlights = {}
+
+local function createHighlightForPlayer(targetPlayer, character)
+    if not character or not targetPlayer or targetPlayer == player then return end
     
-    -- Отслеживаем выход игроков
-    Players.PlayerRemoving:Connect(function(leftPlayer)
-        removeHighlight(leftPlayer)
+    if highlights[targetPlayer] then
+        highlights[targetPlayer]:Destroy()
+        highlights[targetPlayer] = nil
+    end
+    
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "Chams_" .. targetPlayer.Name
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.FillTransparency = 0.7
+    highlight.OutlineColor = Color3.fromRGB(255, 50, 50)
+    highlight.OutlineTransparency = 0.3
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Adornee = character
+    highlight.Parent = ScreenGui
+    highlights[targetPlayer] = highlight
+end
+
+local function setupPlayer(targetPlayer)
+    if targetPlayer == player then return end
+    
+    if targetPlayer.Character then
+        task.spawn(function()
+            task.wait(1)
+            if chamsEnabled and targetPlayer.Character then
+                createHighlightForPlayer(targetPlayer, targetPlayer.Character)
+            end
+        end)
+    end
+    
+    targetPlayer.CharacterAdded:Connect(function(character)
+        if chamsEnabled then
+            task.wait(1)
+            createHighlightForPlayer(targetPlayer, character)
+        end
     end)
 end
 
-local function disableChams()
-    chamsEnabled = false
+local function enableChams()
+    if chamsEnabled then return end
     
-    -- Удаляем все highlights
-    for player, highlight in pairs(playerHighlights) do
+    chamsEnabled = true
+    
+    for targetPlayer, highlight in pairs(highlights) do
         if highlight then
             highlight:Destroy()
         end
     end
+    highlights = {}
     
-    playerHighlights = {}
-    
-    -- Отключаем все соединения
-    for player, connection in pairs(damageConnections) do
-        if connection then
-            connection:Disconnect()
+    for _, targetPlayer in pairs(Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            setupPlayer(targetPlayer)
         end
     end
-    damageConnections = {}
-    lastHealthValues = {}
     
-    highlightFolder:ClearAllChildren()
+    Players.PlayerAdded:Connect(function(newPlayer)
+        if chamsEnabled then
+            setupPlayer(newPlayer)
+        end
+    end)
 end
 
--- ========== ФУНКЦИЯ СКРЫТИЯ/ПОКАЗА GUI ПРИ НАЖАТИИ G ==========
+local function disableChams()
+    if not chamsEnabled then return end
+    
+    chamsEnabled = false
+    
+    for targetPlayer, highlight in pairs(highlights) do
+        if highlight then
+            highlight:Destroy()
+        end
+    end
+    highlights = {}
+end
+
+local autoFireConnection
+local isMouseHeld = false
+
+local function holdLeftMouseButton()
+    if not isMouseHeld then
+        VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, true, game, 1)
+        isMouseHeld = true
+    end
+end
+
+local function releaseLeftMouseButton()
+    if isMouseHeld then
+        VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, false, game, 1)
+        isMouseHeld = false
+    end
+end
+
+local function startAutoFire()
+    if autoFireConnection then autoFireConnection:Disconnect() end
+    
+    autoFireConnection = RunService.Heartbeat:Connect(function()
+        if not settings.AutoFire then 
+            releaseLeftMouseButton()
+            return 
+        end
+        holdLeftMouseButton()
+    end)
+end
+
+local killAllConnection
+
+local function startKillAll()
+    if killAllConnection then 
+        killAllConnection:Disconnect()
+        killAllConnection = nil
+    end
+    
+    if not settings.KillAllEnabled then return end
+    
+    killAllConnection = RunService.Heartbeat:Connect(function()
+        if not settings.KillAllEnabled then
+            if killAllConnection then
+                killAllConnection:Disconnect()
+                killAllConnection = nil
+            end
+            return
+        end
+        
+        local targetPlayer = nil
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= player and v.Character then
+                local humanoid = v.Character:FindFirstChild("Humanoid")
+                if humanoid and humanoid.Health > 0 then
+                    targetPlayer = v
+                    break
+                end
+            end
+        end
+        
+        if targetPlayer and targetPlayer.Character then
+            settings.AutoFire = true
+            startAutoFire()
+        else
+            settings.KillAllEnabled = false
+            settings.AutoFire = false
+            buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: OFF"
+            buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+            buttonInstances["AUTO FIRE: OFF"].Text = "AUTO FIRE: OFF"
+            buttonInstances["AUTO FIRE: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+            releaseLeftMouseButton()
+        end
+    end)
+end
+
+local speedConnection
+local isSpeedActive = false
+
+local function startSpeedGlitch()
+    if speedConnection then speedConnection:Disconnect() end
+    isSpeedActive = true
+    
+    speedConnection = RunService.Heartbeat:Connect(function()
+        local character = player.Character
+        if character and isSpeedActive then
+            local humanoid = character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 50
+            end
+        end
+    end)
+end
+
+local spinConnection
+local isSpinActive = false
+
+local function startSpin()
+    if spinConnection then spinConnection:Disconnect() end
+    isSpinActive = true
+    
+    spinConnection = RunService.Heartbeat:Connect(function()
+        local character = player.Character
+        if character and isSpinActive then
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                local currentCFrame = rootPart.CFrame
+                local newRotation = currentCFrame * CFrame.Angles(0, math.rad(10), 0)
+                rootPart.CFrame = newRotation
+            end
+        end
+    end)
+end
+
+local antiKillConnection
+local safePosition = Vector3.new(0, 25, 0)
+local lastPlayerHealth = 100
+
+local function teleportToSafePosition()
+    pcall(function()
+        if player.Character then
+            local root = player.Character:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.CFrame = CFrame.new(safePosition)
+            end
+        end
+    end)
+end
+
+local function startAntiKill()
+    if antiKillConnection then 
+        antiKillConnection:Disconnect()
+        antiKillConnection = nil
+    end
+    
+    antiKillConnection = RunService.Heartbeat:Connect(function()
+        pcall(function()
+            if player.Character and settings.AntiKill then
+                local humanoid = player.Character:FindFirstChild("Humanoid")
+                if humanoid then
+                    local currentHealth = humanoid.Health
+                    
+                    if currentHealth < lastPlayerHealth then
+                        teleportToSafePosition()
+                    end
+                    
+                    lastPlayerHealth = currentHealth
+                end
+            end
+        end)
+    end)
+end
+
+local freezeConnection
+local frozenPlayers = {}
+
+local function freezePlayer(targetPlayer)
+    if frozenPlayers[targetPlayer] then return end
+    
+    local character = targetPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    if humanoid and humanoid.Health <= 0 then return end
+    
+    frozenPlayers[targetPlayer] = {}
+    
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            frozenPlayers[targetPlayer][part] = {
+                Anchored = part.Anchored,
+                CanCollide = part.CanCollide
+            }
+            part.Anchored = true
+            part.CanCollide = false
+        end
+    end
+    
+    if humanoid then
+        frozenPlayers[targetPlayer].humanoid = humanoid.WalkSpeed
+        humanoid.WalkSpeed = 0
+    end
+end
+
+local function unfreezePlayer(targetPlayer)
+    if not frozenPlayers[targetPlayer] then return end
+    
+    local character = targetPlayer.Character
+    if character then
+        for part, properties in pairs(frozenPlayers[targetPlayer]) do
+            if part:IsA("BasePart") and part.Parent then
+                part.Anchored = properties.Anchored
+                part.CanCollide = properties.CanCollide
+            end
+        end
+        
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid and frozenPlayers[targetPlayer].humanoid then
+            humanoid.WalkSpeed = frozenPlayers[targetPlayer].humanoid
+        end
+    end
+    
+    frozenPlayers[targetPlayer] = nil
+end
+
+local function freezeAllPlayers()
+    for _, targetPlayer in pairs(Players:GetPlayers()) do
+        if targetPlayer ~= player then
+            freezePlayer(targetPlayer)
+        end
+    end
+end
+
+local function unfreezeAllPlayers()
+    for targetPlayer, _ in pairs(frozenPlayers) do
+        unfreezePlayer(targetPlayer)
+    end
+end
+
+local function startFreeze()
+    if freezeConnection then freezeConnection:Disconnect() end
+    
+    freezeConnection = RunService.Heartbeat:Connect(function()
+        if not settings.FreezeEnabled then return end
+        
+        for _, targetPlayer in pairs(Players:GetPlayers()) do
+            if targetPlayer ~= player then
+                if targetPlayer.Character then
+                    local humanoid = targetPlayer.Character:FindFirstChild("Humanoid")
+                    if humanoid and humanoid.Health > 0 then
+                        if not frozenPlayers[targetPlayer] then
+                            freezePlayer(targetPlayer)
+                        end
+                    else
+                        if frozenPlayers[targetPlayer] then
+                            unfreezePlayer(targetPlayer)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
 local isGUIVisible = true
 local isAnimating = false
 local savedPosition = MainFrame.Position
@@ -368,7 +853,7 @@ local function hideGUI()
     
     local hideTween = TweenService:Create(MainFrame, tweenInfo, {
         BackgroundTransparency = 1,
-        Position = UDim2.new(0.5, -180, 0.5, -150)
+        Position = UDim2.new(0.5, -250, 0.5, -150)
     })
     
     for _, child in ipairs(MainFrame:GetDescendants()) do
@@ -408,7 +893,7 @@ local function showGUI()
     local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
     local showTween = TweenService:Create(MainFrame, tweenInfo, {
-        BackgroundTransparency = 0.1,
+        BackgroundTransparency = 0.2,
         Position = savedPosition
     })
     
@@ -444,15 +929,29 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.G then
         if isGUIVisible then
             hideGUI()
-            print("🔒 GUI скрыт (нажмите G для показа)")
         else
             showGUI()
-            print("🔓 GUI показан (нажмите G для скрытия)")
+        end
+    end
+    
+    if input.KeyCode == Enum.KeyCode.F then
+        settings.FreezeEnabled = not settings.FreezeEnabled
+        if settings.FreezeEnabled then
+            freezeButton.Text = "❄️ FREEZE: ON"
+            freezeButton.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+            startFreeze()
+        else
+            freezeButton.Text = "❄️ FREEZE: OFF"
+            freezeButton.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+            if freezeConnection then
+                freezeConnection:Disconnect()
+                freezeConnection = nil
+            end
+            unfreezeAllPlayers()
         end
     end
 end)
 
--- Dragging for MainFrame
 local dragging, dragStart, startPos = false
 MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -471,7 +970,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Tab switching
 for name, btn in pairs(tabButtons) do
     btn.MouseButton1Click:Connect(function()
         for k, page in pairs(pages) do
@@ -480,292 +978,44 @@ for name, btn in pairs(tabButtons) do
     end)
 end
 
--- ========== AIMBOT СИСТЕМА ==========
-local aimbotConnection, speedConnection, spinConnection, killAllConnection
-local isSpeedActive, isSpinActive = false, false
-local currentTarget = nil
-local isMouseHeld = false
-local lastShootTime = 0
-
-local function holdLeftMouseButton()
-    if not isMouseHeld then
-        VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, true, game, 1)
-        isMouseHeld = true
-    end
-end
-
-local function releaseLeftMouseButton()
-    if isMouseHeld then
-        VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, false, game, 1)
-        isMouseHeld = false
-    end
-end
-
-local function isPlayerVisible(targetPlayer)
-    if not settings.VisibleCheck then return true end
-    local camera = Workspace.CurrentCamera
-    local targetCharacter = targetPlayer.Character
-    if not targetCharacter then return false end
-    
-    local head = targetCharacter:FindFirstChild("Head")
-    if not head then return false end
-    
-    local rayOrigin = camera.CFrame.Position
-    local rayDirection = (head.Position - rayOrigin).Unit * 1000
-    
-    local ray = Ray.new(rayOrigin, rayDirection)
-    local ignoreList = {player.Character, camera}
-    local hit, hitPosition = Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-    
-    if hit then
-        local hitCharacter = hit:FindFirstAncestorOfClass("Model")
-        return hitCharacter == targetCharacter
-    end
-    
-    return false
-end
-
-local function getClosestPlayerInFOV()
-    local closestPlayer, closestDistance = nil, settings.FOV
-    local camera = Workspace.CurrentCamera
-    
-    for _, v in pairs(Players:GetPlayers()) do
-        if v == player then continue end
-        if not v.Character then continue end
-        
-        local humanoid = v.Character:FindFirstChild("Humanoid")
-        if not humanoid or humanoid.Health <= 0 then continue end
-        
-        local head = v.Character:FindFirstChild("Head")
-        if not head then continue end
-        
-        local screenPoint, onScreen = camera:WorldToViewportPoint(head.Position)
-        
-        if onScreen then
-            local mousePos = Vector2.new(mouse.X, mouse.Y)
-            local playerPos = Vector2.new(screenPoint.X, screenPoint.Y)
-            local distance = (mousePos - playerPos).Magnitude
-            
-            if distance <= closestDistance then
-                local isVisible = isPlayerVisible(v)
-                if isVisible then
-                    closestDistance, closestPlayer = distance, v
-                end
-            end
+buttonInstances["HITBOX: OFF"].MouseButton1Click:Connect(function()
+    settings.HitboxEnabled = not settings.HitboxEnabled
+    if settings.HitboxEnabled then
+        buttonInstances["HITBOX: OFF"].Text = "HITBOX: ON"
+        buttonInstances["HITBOX: OFF"].BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+        if not isHitboxGUIVisible then
+            createHitboxGUI()
+            hitboxGUI.Enabled = true
+            isHitboxGUIVisible = true
         end
-    end
-    return closestPlayer, closestDistance
-end
-
-local function aimAtPlayer(target)
-    if not target or not target.Character then 
-        releaseLeftMouseButton()
-        return false 
-    end
-    
-    local camera = Workspace.CurrentCamera
-    local targetCharacter = target.Character
-    
-    local head = targetCharacter:FindFirstChild("Head")
-    if not head then 
-        releaseLeftMouseButton()
-        return false 
-    end
-    
-    local targetPosition = head.Position
-    
-    local currentCFrame = camera.CFrame
-    local targetCFrame = CFrame.lookAt(currentCFrame.Position, targetPosition)
-    camera.CFrame = currentCFrame:Lerp(targetCFrame, 0.9)
-    
-    if settings.AutoShoot then
-        local currentTime = tick()
-        if currentTime - lastShootTime >= settings.ShootDelay then
-            holdLeftMouseButton()
-            lastShootTime = currentTime
-        end
-    end
-    
-    return true
-end
-
-local function startAimbot()
-    if aimbotConnection then aimbotConnection:Disconnect() end
-    
-    aimbotConnection = RunService.RenderStepped:Connect(function()
-        if not settings.Enabled then 
-            FOVCircle.UIStroke.Color = Color3.fromRGB(255, 0, 0)
-            releaseLeftMouseButton()
-            return 
-        end
-        
-        local closestPlayer, distance = getClosestPlayerInFOV()
-        if closestPlayer then
-            local success = aimAtPlayer(closestPlayer)
-            if success then
-                FOVCircle.UIStroke.Color = Color3.fromRGB(0, 255, 0)
-                currentTarget = closestPlayer
-            else
-                FOVCircle.UIStroke.Color = Color3.fromRGB(255, 255, 0)
-                releaseLeftMouseButton()
-            end
-        else
-            FOVCircle.UIStroke.Color = Color3.fromRGB(255, 0, 0)
-            releaseLeftMouseButton()
-            currentTarget = nil
-        end
-    end)
-end
-
--- Остальные функции (getRandomAlivePlayer, teleportToPlayer, isPlayerAlive, startSpeedGlitch, startSpin, startKillAll)
-local function getRandomAlivePlayer()
-    local alivePlayers = {}
-    for _, v in pairs(Players:GetPlayers()) do
-        if v == player then continue end
-        if not v.Character then continue end
-        local humanoid = v.Character:FindFirstChild("Humanoid")
-        if humanoid and humanoid.Health > 0 then
-            table.insert(alivePlayers, v)
-        end
-    end
-    return #alivePlayers > 0 and alivePlayers[math.random(1, #alivePlayers)] or nil
-end
-
-local function teleportToPlayer(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then return false end
-    local targetRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    local myRoot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    if targetRoot and myRoot then
-        local offset = Vector3.new(math.random(-5, 5), 0, math.random(-5, 5))
-        myRoot.CFrame = targetRoot.CFrame + offset
-        return true
-    end
-    return false
-end
-
-local function isPlayerAlive(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then return false end
-    local humanoid = targetPlayer.Character:FindFirstChild("Humanoid")
-    return humanoid and humanoid.Health > 0
-end
-
-local function startSpeedGlitch()
-    if speedConnection then speedConnection:Disconnect() end
-    isSpeedActive = true
-    
-    speedConnection = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if character and isSpeedActive then
-            local humanoid = character:FindFirstChild("Humanoid")
-            local rootPart = character:FindFirstChild("HumanoidRootPart")
-            if humanoid and rootPart then
-                humanoid.WalkSpeed = 100
-                if humanoid.Jump then
-                    local camera = Workspace.CurrentCamera
-                    local direction = camera.CFrame.LookVector
-                    rootPart.Velocity = rootPart.Velocity + direction * 100
-                end
-            end
-        end
-    end)
-end
-
-local function startSpin()
-    if spinConnection then spinConnection:Disconnect() end
-    isSpinActive = true
-    
-    spinConnection = RunService.Heartbeat:Connect(function()
-        local character = player.Character
-        if character and isSpinActive then
-            local rootPart = character:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                local currentCFrame = rootPart.CFrame
-                local newRotation = currentCFrame * CFrame.Angles(0, math.rad(50), 0)
-                rootPart.CFrame = newRotation
-            end
-        end
-    end)
-end
-
-local function startKillAll()
-    if killAllConnection then 
-        killAllConnection:Disconnect()
-        killAllConnection = nil
-    end
-    
-    if not settings.KillAllEnabled then return end
-
-    print("🔫 Kill All активирован!")
-    
-    currentTarget = getRandomAlivePlayer()
-    if not currentTarget then
-        print("❌ Нет живых игроков!")
-        settings.KillAllEnabled = false
-        buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: OFF"
-        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-        return
-    end
-    
-    print("🎯 Первая цель: " .. currentTarget.Name)
-    teleportToPlayer(currentTarget)
-
-    killAllConnection = RunService.Heartbeat:Connect(function()
-        if not settings.KillAllEnabled then
-            if killAllConnection then
-                killAllConnection:Disconnect()
-                killAllConnection = nil
-            end
-            print("🔫 Kill All остановлен!")
-            return
-        end
-        
-        if not isPlayerAlive(currentTarget) then
-            currentTarget = getRandomAlivePlayer()
-            if currentTarget then
-                teleportToPlayer(currentTarget)
-                print("🎯 Новая цель: " .. currentTarget.Name)
-            else
-                print("✅ Все игроки мертвы!")
-                settings.KillAllEnabled = false
-                buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: OFF"
-                buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-                return
-            end
-        end
-        
-        local myCharacter = player.Character
-        local myRoot = myCharacter and myCharacter:FindFirstChild("HumanoidRootPart")
-        local targetRoot = currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart")
-        
-        if myRoot and targetRoot then
-            local angle = tick() * 10
-            local radius = 5
-            local x, z = math.cos(angle) * radius, math.sin(angle) * radius
-            local offset = Vector3.new(x, 0, z)
-            myRoot.CFrame = CFrame.new(targetRoot.Position + offset, targetRoot.Position)
-            
-            VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, true, game, 1)
-            task.wait(0.1)
-            VirtualInputManager:SendMouseButtonEvent(mouse.X, mouse.Y, 0, false, game, 1)
-        end
-    end)
-end
-
--- ========== ОБРАБОТЧИКИ КНОПОК ==========
-buttonInstances["AIMBOT: OFF"].MouseButton1Click:Connect(function()
-    settings.Enabled = not settings.Enabled
-    if settings.Enabled then
-        buttonInstances["AIMBOT: OFF"].Text = "AIMBOT: ON"
-        buttonInstances["AIMBOT: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-        startAimbot()
-        print("🎯 УЛУЧШЕННЫЙ AimBot ВКЛЮЧЕН (FOV: 100)")
     else
-        buttonInstances["AIMBOT: OFF"].Text = "AIMBOT: OFF"
-        buttonInstances["AIMBOT: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-        if aimbotConnection then aimbotConnection:Disconnect() end
+        buttonInstances["HITBOX: OFF"].Text = "HITBOX: OFF"
+        buttonInstances["HITBOX: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+        for _, otherPlayer in ipairs(Players:GetPlayers()) do
+            if otherPlayer ~= player then
+                ResetBodyPart(otherPlayer, "Head")
+            end
+        end
+        if hitboxGUI then
+            hitboxGUI.Enabled = false
+        end
+    end
+end)
+
+buttonInstances["AUTO FIRE: OFF"].MouseButton1Click:Connect(function()
+    settings.AutoFire = not settings.AutoFire
+    if settings.AutoFire then
+        buttonInstances["AUTO FIRE: OFF"].Text = "AUTO FIRE: ON"
+        buttonInstances["AUTO FIRE: OFF"].BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+        startAutoFire()
+    else
+        buttonInstances["AUTO FIRE: OFF"].Text = "AUTO FIRE: OFF"
+        buttonInstances["AUTO FIRE: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+        if autoFireConnection then
+            autoFireConnection:Disconnect()
+            autoFireConnection = nil
+        end
         releaseLeftMouseButton()
-        FOVCircle.UIStroke.Color = Color3.fromRGB(255, 0, 0)
-        print("🎯 AimBot ВЫКЛЮЧЕН")
     end
 end)
 
@@ -774,30 +1024,36 @@ buttonInstances["KILL ALL: OFF"].MouseButton1Click:Connect(function()
 
     if settings.KillAllEnabled then
         buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: ON"
-        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(0, 80, 0)
         startKillAll()
-        print("✅ Kill All включен!")
     else
         buttonInstances["KILL ALL: OFF"].Text = "KILL ALL: OFF"
-        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        buttonInstances["KILL ALL: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
         if killAllConnection then
             killAllConnection:Disconnect()
             killAllConnection = nil
         end
-        print("❌ Kill All выключен!")
+        settings.AutoFire = false
+        buttonInstances["AUTO FIRE: OFF"].Text = "AUTO FIRE: OFF"
+        buttonInstances["AUTO FIRE: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+        releaseLeftMouseButton()
     end
 end)
 
-buttonInstances["WALL CHECK: OFF"].MouseButton1Click:Connect(function()
-    settings.VisibleCheck = not settings.VisibleCheck
-    if settings.VisibleCheck then
-        buttonInstances["WALL CHECK: OFF"].Text = "WALL CHECK: ON"
-        buttonInstances["WALL CHECK: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-        print("🔍 Проверка стен ВКЛЮЧЕНА")
+freezeButton.MouseButton1Click:Connect(function()
+    settings.FreezeEnabled = not settings.FreezeEnabled
+    if settings.FreezeEnabled then
+        freezeButton.Text = "❄️ FREEZE: ON"
+        freezeButton.BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+        startFreeze()
     else
-        buttonInstances["WALL CHECK: OFF"].Text = "WALL CHECK: OFF"
-        buttonInstances["WALL CHECK: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-        print("🔍 Проверка стен ВЫКЛЮЧЕНА")
+        freezeButton.Text = "❄️ FREEZE: OFF"
+        freezeButton.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+        if freezeConnection then
+            freezeConnection:Disconnect()
+            freezeConnection = nil
+        end
+        unfreezeAllPlayers()
     end
 end)
 
@@ -806,18 +1062,16 @@ buttonInstances["SPEED: OFF"].MouseButton1Click:Connect(function()
         if speedConnection then speedConnection:Disconnect() end
         isSpeedActive = false
         buttonInstances["SPEED: OFF"].Text = "SPEED: OFF"
-        buttonInstances["SPEED: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        buttonInstances["SPEED: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
         local character = player.Character
         if character then
             local humanoid = character:FindFirstChild("Humanoid")
             if humanoid then humanoid.WalkSpeed = 16 end
         end
-        print("🚫 SpeedGlitch ВЫКЛЮЧЕН")
     else
         startSpeedGlitch()
         buttonInstances["SPEED: OFF"].Text = "SPEED: ON"
-        buttonInstances["SPEED: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-        print("⚡ SpeedGlitch ВКЛЮЧЕН")
+        buttonInstances["SPEED: OFF"].BackgroundColor3 = Color3.fromRGB(0, 80, 0)
     end
 end)
 
@@ -826,51 +1080,73 @@ buttonInstances["SPIN: OFF"].MouseButton1Click:Connect(function()
         if spinConnection then spinConnection:Disconnect() end
         isSpinActive = false
         buttonInstances["SPIN: OFF"].Text = "SPIN: OFF"
-        buttonInstances["SPIN: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-        print("🌀 Krutilka ВЫКЛЮЧЕНА")
+        buttonInstances["SPIN: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
     else
         startSpin()
         buttonInstances["SPIN: OFF"].Text = "SPIN: ON"
-        buttonInstances["SPIN: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
-        print("🌀 Krutilka ВКЛЮЧЕНА")
+        buttonInstances["SPIN: OFF"].BackgroundColor3 = Color3.fromRGB(0, 80, 0)
     end
 end)
 
--- Обработчик кнопки CHAMS
+buttonInstances["ANTI KILL: OFF"].MouseButton1Click:Connect(function()
+    settings.AntiKill = not settings.AntiKill
+    if settings.AntiKill then
+        buttonInstances["ANTI KILL: OFF"].Text = "ANTI KILL: ON"
+        buttonInstances["ANTI KILL: OFF"].BackgroundColor3 = Color3.fromRGB(0, 80, 0)
+        startAntiKill()
+    else
+        buttonInstances["ANTI KILL: OFF"].Text = "ANTI KILL: OFF"
+        buttonInstances["ANTI KILL: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+        if antiKillConnection then
+            antiKillConnection:Disconnect()
+            antiKillConnection = nil
+        end
+    end
+end)
+
 buttonInstances["CHAMS: OFF"].MouseButton1Click:Connect(function()
     settings.ChamsEnabled = not settings.ChamsEnabled
     
     if settings.ChamsEnabled then
         buttonInstances["CHAMS: OFF"].Text = "CHAMS: ON"
-        buttonInstances["CHAMS: OFF"].BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+        buttonInstances["CHAMS: OFF"].BackgroundColor3 = Color3.fromRGB(0, 80, 0)
         enableChams()
-        print("👁️ HIGHLIGHT CHAMS ВКЛЮЧЕНЫ!")
-        print("💜 Игроки подсвечены мягким фиолетовым")
-        print("🔴 При получении урона (уменьшении HP) - красный цвет на 1.25 секунды")
     else
         buttonInstances["CHAMS: OFF"].Text = "CHAMS: OFF"
-        buttonInstances["CHAMS: OFF"].BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        buttonInstances["CHAMS: OFF"].BackgroundColor3 = Color3.fromRGB(60, 0, 0)
         disableChams()
-        print("👁️ CHAMS ВЫКЛЮЧЕНЫ")
     end
 end)
 
--- Обновление FOV круга
-mouse.Move:Connect(function()
-    FOVCircle.Position = UDim2.new(0, mouse.X - settings.FOV, 0, mouse.Y - settings.FOV)
-end)
-
--- Перезапуск при смене персонажа
 player.CharacterAdded:Connect(function(character)
-    print("♻️ Персонаж обновлен")
-    if settings.Enabled then
-        wait(2)
-        startAimbot()
+    if settings.AntiKill then
+        task.wait(2)
+        startAntiKill()
+    end
+    if isSpeedActive then
+        task.wait(2)
+        startSpeedGlitch()
+    end
+    if settings.ChamsEnabled then
+        enableChams()
     end
 end)
 
-print("✅ BANDITS9SCRIPT GUI загружен!")
-print("🎯 УЛУЧШЕННЫЙ AimBot: FOV 100, автоматическая левая кнопка мыши")
-print("👁️ HIGHLIGHT CHAMS: мягкий фиолетовый + красный при уроне")
-print("🔴 Красный цвет ТОЛЬКО когда HP уменьшается")
-print("🎮 Нажмите G для скрытия/показа GUI")
+for _, otherPlayer in ipairs(Players:GetPlayers()) do
+    if otherPlayer ~= player then
+        setupPlayer(otherPlayer)
+    end
+end
+
+Players.PlayerAdded:Connect(function(newPlayer)
+    if settings.FreezeEnabled then
+        freezePlayer(newPlayer)
+    end
+    setupPlayer(newPlayer)
+end)
+
+Players.PlayerRemoving:Connect(function(leftPlayer)
+    if frozenPlayers[leftPlayer] then
+        unfreezePlayer(leftPlayer)
+    end
+end)
